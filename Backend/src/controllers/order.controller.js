@@ -1,0 +1,103 @@
+import orderService from "../services/order.service.js";
+
+export const checkout = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { shippingAddress } = req.body;
+        const { order, razorpayOrder } = await orderService.createOrder(userId, shippingAddress);
+        res.status(201).json({
+            message: "Order placed successfully. Please complete payment.",
+            success: true,
+            order,
+            razorpayOrder   // frontend needs this for the Razorpay checkout widget — was being dropped before
+        });
+    } catch (error) {
+        console.error("Checkout error:", error);
+        res.status(400).json({ message: error.message || "Checkout failed" });
+    }
+};
+
+export const completePayment = async (req, res) => {
+    try {
+        const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+        const order = await orderService.completePayment({ orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature });
+        res.status(200).json({ message: "Payment successful. Stock updated.", success: true, order });
+    } catch (error) {
+        console.error("Payment error:", error);
+        res.status(400).json({ message: error.message || "Payment completion failed" });
+    }
+};
+
+export const getUserOrders = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { page = 1, limit = 10 } = req.query;
+        const orders = await orderService.getUserOrders(userId, { 
+            limit: Number(limit), 
+            skip: (Number(page) - 1) * Number(limit) 
+        });
+        res.status(200).json({ success: true, orders });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const getOrderById = async (req, res) => {
+    try {
+        const order = await orderService.getOrderById(req.params.id, req.user);
+        if (!order) return res.status(404).json({ message: "Order not found" });
+        res.status(200).json({ success: true, order });
+    } catch (error) {
+        console.error("Get order error:", error);
+        res.status(error.message?.includes("Unauthorized") ? 403 : 500).json({ message: error.message || "Internal server error" });
+    }
+};
+
+export const getSellerOrdersList = async (req, res) => {
+    try {
+        const sellerId = req.user._id;
+        const { page = 1, limit = 10 } = req.query;
+        const orders = await orderService.getSellerOrders(sellerId, {
+            limit: Number(limit),
+            skip: (Number(page) - 1) * Number(limit)
+        });
+        res.status(200).json({ success: true, orders });
+    } catch (error) {
+        console.error("Get seller orders error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const updateOrderStatus = async (req, res) => {
+    try {
+        const sellerId = req.user._id;
+        const { id } = req.params;
+        const { status } = req.body;
+        const order = await orderService.updateOrderStatus(id, status, sellerId);
+        res.status(200).json({ message: "Order status updated", success: true, order });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+
+export const getFrequentlyBoughtTogether = async (req, res) => {
+    try {
+        const suggestions = await orderService.getFrequentlyBoughtTogether(req.params.productId);
+        res.status(200).json({ success: true, suggestions });
+    } catch (error) {
+        console.error("Frequently bought together error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+
+export const getSellerAnalytics = async (req, res) => {
+    try {
+        const analytics = await orderService.getSellerAnalytics(req.user._id);
+        res.status(200).json({ success: true, analytics });
+    } catch (error) {
+        console.error("Seller analytics error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
