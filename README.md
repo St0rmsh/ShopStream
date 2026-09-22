@@ -2,7 +2,7 @@
 
 A full-stack MERN e-commerce platform with buyer and seller experiences — product catalog with variants, cart & wishlist, Razorpay checkout, order management, seller analytics, reviews, and Google OAuth login.
 
-**🔗 Live Demo:** [https://streamline-chez.onrender.com](https://streamline-chez.onrender.com)
+**🔗 Live Demo:**[ [https://shopstream-js68.onrender.com](https://shopstream-js68.onrender.com)]
 
 ---
 
